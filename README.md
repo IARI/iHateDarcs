@@ -1,5 +1,5 @@
 # iHateDarcs
-To my best knowledge the first gui for darcs
+a python gui for darcs
 
 ## DISCLAIMER:
 as of now
