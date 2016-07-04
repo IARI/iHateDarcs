@@ -5,7 +5,6 @@ from darcs.changes import get_local_changes_only, get_changes
 from depgraph import draw_graph
 from darcs.clone import Clone, CopyFiles, CopyDir, TempBackup
 from darcs.amendrecord import amend_patch, record_patch, unrecord_patch
-from darcs.whatrevert import revert
 from darcs.diff import diffPaths, diffMeldDirs, diff, apply
 from darcs.pullsend import pull, send, unpull
 from darcs.test import test

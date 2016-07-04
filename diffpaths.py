@@ -1,9 +1,7 @@
 #! /usr/bin/python3
 
 import argparse_wrapper
-import guidata
 from os import path
-import sys
 
 # from guidata_wrapper import message
 
