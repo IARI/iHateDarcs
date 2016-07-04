@@ -37,13 +37,14 @@ Also a preliminary basic support for rietveld:
 * graphviz
 * gnu diffutils (the diff command)
 * gnu patch
-
-I recommend installing darcs with `stack`.
+* PyQt4 or PyQt5 (required for guidata. Ubuntu reps: python3-pyqtX - alternatively via pypi)
 
 **regarding the darcs version**
 There have been slight output changes, in darcs 2.12 and the gui wraps the darcs cli client.
 trying to use the gui with an earlier version might result in errors, unwanted local repository states
 I guarantee for nothing!
+
+It is recommended to install darcs with `stack install darcs-2.12.0`.
 
 moreover you need the following PyPI packages:
 (install with `sudo pip3 install <package-name>`)
@@ -55,3 +56,5 @@ moreover you need the following PyPI packages:
 * lazy
 * lxml
 * pyaml
+* graphviz
+* pydot
