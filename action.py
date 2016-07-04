@@ -1,8 +1,8 @@
 #! /usr/bin/python3
 
 import argparse_wrapper
-import guidata
 from guidata_wrapper import message
+import guidata
 from os import getcwd, path
 from darcs.common import DarcsException
 from pexpect import TIMEOUT

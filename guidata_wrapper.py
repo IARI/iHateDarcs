@@ -4,9 +4,13 @@ from darcs.changes import get_local_changes_only
 from darcs.whatrevert import whatsnew
 from pexpect_helper import SpawnAction, spawn
 from config import Config
-from PyQt5.QtWidgets import QMessageBox
 from collections import defaultdict
 import os
+
+try:
+    from PyQt5.QtWidgets import QMessageBox
+except RuntimeError:
+    pass
 
 from darcs.common import Prefixes, MyRedmine
 
