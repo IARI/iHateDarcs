@@ -10,7 +10,7 @@ import os
 try:
     from PyQt5.QtWidgets import QMessageBox
 except RuntimeError:
-    pass
+    from PyQt4.QtGui import QMessageBox
 
 from darcs.common import Prefixes, MyRedmine
 
@@ -198,14 +198,14 @@ def AutoGui(object, grouping=None, title="Preferences", changed_hook=None):
     class ObjectEditor(dt.DataSet):
         def edit(self, parent=None, apply=None, size=None):
             res = super().edit(parent, apply, size)
-            changed = False;
+            changed = False
             if res:
                 for ds in self._items:
                     k = ds._name
                     v = getattr(self, ds._name)
                     if getattr(object, k) != v:
                         print("updated {}: {} ({})".format(ds._name, v, type(v)))
-                        changed = True;
+                        changed = True
                         setattr(object, k, v)
 
             if changed and callable(changed_hook):

@@ -7,6 +7,7 @@ from os import getcwd, path
 from darcs.common import DarcsException
 from pexpect import TIMEOUT
 from darcs.gui import DarcsGui, OperationCancelled
+from config import Config
 
 parser = argparse_wrapper.parser
 parser.add_argument("--cwd", help="darcs project path", action=argparse_wrapper.readable_dir, default=getcwd())
@@ -24,8 +25,24 @@ _app = guidata.qapplication()  # not required if a QApplication has already been
 
 try:
 
-    gui = DarcsGui(cli_args)
+    if not Config._INITIALIZED:
+        if message("first run: config",
+                   "Do you want to configure iHateDarcs now?", True):
 
+            from guidata_wrapper import AutoGui
+
+
+            def hook():
+                Config._INITIALIZED = True
+                print("config has been initialized.")
+                Config.save()
+
+
+            AutoGui(Config, changed_hook=hook).edit()
+            if not Config._INITIALIZED:
+                message("no changes", "You may edit the preferences later.")
+
+    gui = DarcsGui(cli_args)
     gui.run()
 
 except OperationCancelled:
