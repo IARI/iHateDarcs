@@ -48,7 +48,7 @@ class DarcsGui:
         self.pristine = self._abspath(Config.PRISTINE_DIR)
         self.backup = self._abspath(Config.BACKUP_DIR)
 
-        # stuff that might be needed in some commands
+        # patch(es) that might be needed in some commands
         self.patches = None
 
     @classmethod
@@ -225,8 +225,10 @@ class DarcsGui:
         if amend_gui.askdeps:
             message("not supported", '"ask-deps" is not yet supported.')
 
-        print("Selected files:")
-        print(amend_gui.files)
+        if amend_gui.files:
+            message("not supported", 'adding files is not yet supported.')
+            print("Selected files:")
+            print(amend_gui.files)
 
         patch_title = ''.join(e if e.isalnum() else '_' for e in patch.title)
 
@@ -383,41 +385,6 @@ class DarcsGui:
         strips = old.count(os.path.sep) + 1
 
         return record_changes, pending_changes, strips, dp
-
-        # def _copy_new_files_pick_changes(self):
-        #
-        #     filechanges, addfiles = whatsnew(self.cwd, None)
-        #
-        #     copytask = self._copy_new_files(addfiles)
-        #
-        #     orderedchanges = [f for f in filechanges if f not in addfiles]
-        #     os.path.abspath(self.file)
-        #     try:
-        #         f = next(p for p in orderedchanges if self._compare_paths(p, self.file))
-        #         orderedchanges.remove(f)
-        #         orderedchanges.insert(0, f)
-        #     except:
-        #         pass
-        #
-        #     while True:
-        #         # using meld since opposed to jetbrains diff we can
-        #         # 1. wait for it to return when closed
-        #         # 2. open a specified set of file-pairs - in our case the "darcs whatsnew" changes.
-        #         diffMeld(self.pristine, self.cwd, filechanges=orderedchanges)
-        #
-        #         # check if we now have changes
-        #         files, _ = whatsnew(self.pristine, None)
-        #
-        #         if files or new_files_selected:
-        #             print('adding {} new files'.format(len(new_files_selected)))
-        #             print('changes picked in {} files'.format(len(files)))
-        #             print(list(files))
-        #             break
-        #
-        #         if not message('keine änderungen gewählt', 'keine änderungen. Nochmal probieren?', True):
-        #             exit()
-        #
-        #     copytask.join()
 
 
 class OperationCancelled(Exception):

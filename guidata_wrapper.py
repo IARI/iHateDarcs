@@ -69,18 +69,6 @@ def pickfrom(*items, title="Pick an item...", itemtitle="items", multiple=False,
     return items[int(p.selection)]
 
 
-# , radio=True
-# class PatchPrefix(dt.ActivableDataSet):
-#     """
-#     Example
-#     <b>Activable dataset example</b>
-#     """
-#     enable = di.BoolItem("Enable parameter set",
-#                       help="If disabled, the following parameters will be ignored",
-#                       default=False)
-#     prefix = di.ChoiceItem('Prefix', [(p, p.name) for p in Prefixes])
-
-
 def AmendPatch(cwd, files):
     patches = get_local_changes_only(cwd, Config.UPSTREAM_REPO, files, Config.MAX_PATCH_COUNT,
                                      author=Config.AUTHOR)[:Config.MAX_PATCH_SHOW]
