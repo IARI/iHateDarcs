@@ -47,19 +47,16 @@ def pickfrom(*items, title="Pick an item...", itemtitle="items", multiple=False,
     choices = [strf(i) for i in items] if do_format else list(items)
     kwargs = dict(label=itemtitle, choices=choices)
     if multiple:
-        widget = di.MultipleChoiceItem
         kwargs.update(default=range(len(items)))
+        widget = di.MultipleChoiceItem(**kwargs).vertical(2)
     else:
-        widget = di.ChoiceItem
         if do_format:
             kwargs.update(default=0)
         kwargs.update(radio=True)
+        widget = di.ChoiceItem(**kwargs)
 
     class Processing(CancelDataset):
-        # a = di.FloatItem("Parameter #1", default=2.3)
-        # b = di.IntItem("Parameter #2", min=0, max=10, default=5)
-        # type = di.ChoiceItem("Patch", ("amend", "record"), radio=True)
-        selection = widget(**kwargs)
+        selection = widget
 
     p = Processing(title=title)
     p.edit()
