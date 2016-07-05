@@ -213,7 +213,9 @@ def AutoGui(object, grouping=None, title="Preferences", changed_hook=None):
     members = {}
 
     for k, v in object.__dict__.items():
-        if isinstance(v, int):
+        if k[0] == '_':
+            continue
+        elif isinstance(v, int):
             members[k] = di.IntItem(k, v)
         elif isinstance(v, bool):
             members[k] = di.BoolItem(k, v)
