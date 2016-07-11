@@ -1,6 +1,7 @@
 import guidata.dataset.datatypes as dt
 import guidata.dataset.dataitems as di
 from darcs.changes import get_local_changes_only
+from darcs.common import Patch
 from darcs.whatrevert import whatsnew
 from pexpect_helper import SpawnAction, spawn
 from config import Config
@@ -118,6 +119,15 @@ def RecordPatch(*args, **kwargs):
         @property
         def Prefix(self):
             return self.prefix.Name(self.tracker)
+
+        @property
+        def FormattedName(self):
+            return '{}: {}'.format(self.Prefix, self.name)
+
+        def read(self, p: Patch):
+            prefix, name = p.title.split(': ', 1)
+            self.name = name
+            self.prefix, self.tracker = Prefixes.read(prefix)
 
     return RecordPatch(*args, **kwargs)
 

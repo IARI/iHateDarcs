@@ -4,7 +4,7 @@ from darcs.common import Patch
 from darcs.changes import get_local_changes_only, get_changes
 from depgraph import draw_graph
 from darcs.clone import Clone, CopyFiles, CopyDir, TempBackup
-from darcs.amendrecord import amend_patch, record_patch, unrecord_patch
+from darcs.amendrecord import amend_patch, record_patch, unrecord_patch, rename_patch
 from darcs.diff import diffPaths, diffMeldDirs, diff, apply
 from darcs.pullsend import pull, send, unpull
 from darcs.test import test
@@ -137,7 +137,7 @@ class DarcsGui:
         apply(self.cwd, pending_changes, strips, unapply=True)
         print('unapplied pending changes')
 
-        patchname = '{}: {}'.format(NewPatchPars.Prefix, NewPatchPars.name)
+        patchname = NewPatchPars.FormattedName
         record_patch(self.cwd, patchname, NewPatchPars.author)
 
         print('applying patch {} with p{}...'.format(pending_changes, strips))
@@ -258,6 +258,24 @@ class DarcsGui:
 
         issues = patch.referenced_issues
         print(issues)
+
+    def darcs_rename(self):
+        self.getpatch()
+        patch = self.patches
+
+        NewPatchPars = RecordPatch('Neuen Patch Aufzeichnen')
+        NewPatchPars.read(patch)
+        NewPatchPars.edit()
+
+        old, new = patch.title, NewPatchPars.FormattedName
+        if old == new:
+            print("patch name\n   {}\nnot changed.".format(old))
+            return
+        print("renaming\n   {}\n-> {}".format(old, new))
+        rename_patch(self.cwd, patch, new)
+
+        if message('send', 'send patch?\n{}'.format(patch.title), True):
+            send(self.cwd, self.getpatchagain(patch))
 
     def darcs_diff(self):
         record_changes, pending_changes, strips, dp = self._select_diff_parts('diff', False)

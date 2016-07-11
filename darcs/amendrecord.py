@@ -50,6 +50,25 @@ def amend_patch(cwd, patch: Patch, files=None, apply_all=True, look_for_adds=Fal
              ).execute(darcs_amend)
 
 
+def rename_patch(cwd, patch: Patch, patchname: str):
+    args = ['amend', patch.MATCH_ARG, patch.match_hash, '-m', patchname]
+
+    darcs_amend = Darcs(args, None, cwd=cwd)
+
+    start = {r'\n[^\n]*?amend this patch\?.*': Send('y'),
+             'Cancelling amend since no patch was selected.': None,
+             'Waiting for lock .*\n': None}
+
+    finished = {r'Finished amending patch.*': EOF(None)}
+    finish = {'Proceed?': [Send('y'), finished]}
+    finish.update(finished)
+
+    done = {r'\n[^\n]*?record this change\?.*': Send('d'),
+            }
+
+    Strategy(start, done, finish).execute(darcs_amend)
+
+
 def record_patch(cwd, patchname, author, file=None, apply_all=True):
     args = ['record', '-l', '--author', author, '--name', patchname]
     if apply_all:

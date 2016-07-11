@@ -6,6 +6,12 @@ def get_local_changes_only(cwd, upstream, files, max_patchcount=None, author=Non
     upstream_patches = get_changes_from_upstream(cwd, upstream, files, max_patchcount, author)
     patches = get_changes(cwd, None, max_patchcount, author=author)
 
+    for p in upstream_patches:
+        print("{}: {}".format(p in patches, p.title))
+    for p in patches:
+        if p not in upstream_patches:
+            print(p.title)
+
     return [p for p in patches if p not in upstream_patches]
 
 

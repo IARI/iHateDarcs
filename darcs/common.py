@@ -41,6 +41,23 @@ class Prefixes(Enum):
         except Exception:
             return self.name
 
+    def Match(self, name):
+        return re.match(self.Name("(\d+)"), name)
+
+    @classmethod
+    def read(cls, name):
+        for pref in cls:
+            m = pref.Match(name)
+            issue = None
+            try:
+                issue = m.group(1)
+            except:
+                pass
+            if m:
+                return pref, int(issue)
+
+        raise Exception("Could not read {} as prefix".format(name))
+
 
 NEWLINE = r"(\r\n?|\n)"
 NONEWLINE = r"[^\r\n]"
