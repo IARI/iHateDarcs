@@ -152,6 +152,40 @@ def QuickEditIssue(*args, **kwargs):
     return QuickIssue(*args)
 
 
+def QuickEditIssue2(issue, *args):
+    mrm = MyRedmine()
+    stati = [issue.status] + [s for s in mrm.issue_statuses if s.name != issue.status.name]
+    statusChoices = [(s, s.name) for s in stati]
+
+    class QuickIssue(CancelDataset):
+        status = di.ChoiceItem("Status", statusChoices)
+        progress = di.IntItem("Progress", min=0, max=100, slider=True, default=issue.done_ratio)
+        comment = di.TextItem("Comment")
+
+    qei = QuickIssue(*args)
+    qei.edit()
+
+    if qei.status:
+        issue.status_id = qei.status.id
+
+    if qei.comment:
+        issue.notes = qei.comment
+
+    save_progress = qei.progress != issue.done_ratio
+    if qei.progress < issue.done_ratio:
+        save_progress = message("are you sure?",
+                                "you're changing the progress of the issue from {}% to {}%.".format(
+                                    issue.done_ratio,
+                                    qei.progress),
+                                True)
+    if save_progress:
+        issue.done_ratio = qei.progress
+
+    issue.save()
+
+    return qei
+
+
 class GraphOptions(CancelDataset):
     """
     Generate a Dependency Graph

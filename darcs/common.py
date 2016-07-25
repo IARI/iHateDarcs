@@ -191,8 +191,8 @@ class Patch:
         if not refs:
             return None
 
-        print(refs)
-        return None
+        mrm = MyRedmine()
+        return [mrm.getIssue(r) for r in refs]
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.title == other.title and self.hash == other.hash
@@ -259,8 +259,8 @@ class MyRedmine:
     def project(self):
         return self.redmine_main.project.get(Config.REDMINE_PROJECT)
 
-    def getIssue(self, tracker_id):
-        return self.redmine_main.issue.filter(tracker_id=tracker_id)
+    def getIssue(self, id):
+        return self.redmine_main.issue.get(id)
 
 
 class LazyObject:

@@ -1,5 +1,5 @@
 from config import Config, Cache
-from guidata_wrapper import message, pickfrom, RecordPatch, SaveDiff, AutoGui, QuickEditIssue, AmendPatch
+from guidata_wrapper import *
 from darcs.common import Patch
 from darcs.changes import get_local_changes_only, get_changes
 from depgraph import draw_graph
@@ -149,9 +149,9 @@ class DarcsGui:
         # if message('send', 'send patch?\n{}'.format(self.patches.title), True):
         #     send(self.cwd, self.getpatchagain())
 
-        if message('send', 'send patch?\n{}'.format(patchname), True):
-            p = Patch('', NewPatchPars.author, None, patchname)
-            send(self.cwd, self.getpatchagain(p))
+        patch = Patch('', NewPatchPars.author, None, patchname)
+
+        self._afterPatchMod(patch)
 
     def darcs_pull(self):
         # pull(self.cwd, apply_all=False)
@@ -253,11 +253,17 @@ class DarcsGui:
 
         list(dp)  # finish darcs diff
 
+        self._afterPatchMod(patch)
+
+    def _afterPatchMod(self, patch: Patch):
         if message('send', 'send patch?\n{}'.format(patch.title), True):
             send(self.cwd, self.getpatchagain(patch))
 
         issues = patch.referenced_issues
-        print(issues)
+        issueNames = "\n".join(["#{}: {}".format(i.id, i.subject) for i in issues])
+        if issues and message('Edit Issues', 'Do you want to edit referenced Issues?\n{}'.format(issueNames), True):
+            for issue in issues:
+                QuickEditIssue2(issue)
 
     def darcs_rename(self):
         self.getpatch()
