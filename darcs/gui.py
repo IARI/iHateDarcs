@@ -260,8 +260,11 @@ class DarcsGui:
             send(self.cwd, self.getpatchagain(patch))
 
         issues = patch.referenced_issues
+        if not issues:
+            return
+
         issueNames = "\n".join(["#{}: {}".format(i.id, i.subject) for i in issues])
-        if issues and message('Edit Issues', 'Do you want to edit referenced Issues?\n{}'.format(issueNames), True):
+        if message('Edit Issues', 'Do you want to edit referenced Issues?\n{}'.format(issueNames), True):
             for issue in issues:
                 QuickEditIssue2(issue)
 
