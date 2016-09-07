@@ -1,12 +1,13 @@
 from config import Config
 from lxml import html
 import requests
-#import json
+
+# import json
 
 RIETVELD_AUTH_URL = Config.RIETVELD_URL + 'xsrf_token'
 RIETVELD_MY_ISSUES_URL = Config.RIETVELD_URL + 'user/' + Config.RIETVELD_USER
 RIETVELD_API_ISSUE_URL = Config.RIETVELD_URL + 'api/{}'
-RIETVELD_ISSUE_XPATH = '//tr[@name="issue"]/ td[{}] / div / a / text()'
+RIETVELD_ISSUE_XPATH = '//tr[@name="issue"]/ td[{}] / div / a / text()[following::*[contains(text(),"Issues Closed Recently")]]'
 
 RIETVELD_ISSUE_URL = Config.RIETVELD_URL + '{}'
 
