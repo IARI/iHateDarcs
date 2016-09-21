@@ -83,9 +83,10 @@ class LazyValues:
         darcs_env.update({
             # darcs should pipe output to stdout, instead of using a pager like less
             "DARCS_PAGER": "cat",
-            "ANDROID_HOME": Config.ANDROID_HOME,
             "PATH": os.getenv('PATH')
         })
+
+        darcs_env.update(Config.ENVIRONMENT)
 
         # for v in darcs_env:
         #     print(v)

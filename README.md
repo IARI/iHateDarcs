@@ -58,3 +58,4 @@ moreover you need the following PyPI packages:
 * pyaml
 * graphviz
 * pydot
+* spyder

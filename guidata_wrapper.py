@@ -1,5 +1,6 @@
 import guidata.dataset.datatypes as dt
 import guidata.dataset.dataitems as di
+import guidata.dataset.qtwidgets as qtw
 from darcs.changes import get_local_changes_only
 from darcs.common import Patch
 from darcs.whatrevert import whatsnew
@@ -235,6 +236,44 @@ class NewFileItem(di.FileSaveItem):
         return super().check_value(value) and not os.path.exists(value)
 
 
+class DictItem(di.ButtonItem):
+    """
+    Construct a dictionary data item
+        * label [string]: name
+        * default [dict]: default value (optional)
+        * help [string]: text shown in tooltip (optional)
+        * check [bool]: if False, value is not checked (optional, default=True)
+    """
+
+    def __init__(self, label, default=None, help='', check=True):
+        def dictedit(instance, item, value, parent):
+            try:
+                # Spyder 3
+                from spyder.widgets.variableexplorer \
+                    import collectionseditor
+                Editor = collectionseditor.CollectionsEditor
+            except ImportError:
+                # Spyder 2
+                from spyderlib.widgets import dicteditor
+                Editor = dicteditor.DictEditor
+            editor = Editor(parent)
+            value_was_none = value is None
+            if value_was_none:
+                value = {}
+            editor.setup(value)
+            if editor.exec_():
+                return editor.get_value()
+            else:
+                if value_was_none:
+                    return
+                return value
+
+        di.ButtonItem.__init__(self, label, dictedit, icon='dictedit.png',
+                               default=default, help=help, check=check)
+
+qtw.DataSetEditLayout.register(DictItem, qtw.ButtonWidget)
+
+
 def AutoGui(object, grouping=None, title="Preferences", changed_hook=None):
     class ObjectEditor(dt.DataSet):
         def edit(self, parent=None, apply=None, size=None):
@@ -265,6 +304,8 @@ def AutoGui(object, grouping=None, title="Preferences", changed_hook=None):
             members[k] = di.BoolItem(k, v)
         elif isinstance(v, str):
             members[k] = di.StringItem(k, v)
+        elif isinstance(v, dict):
+            members[k] = DictItem(k, v)
 
     AutoGui = type("AutoGui", (ObjectEditor,), members)
 

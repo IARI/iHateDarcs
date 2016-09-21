@@ -90,7 +90,7 @@ class ConfigObject(Serializable):
 
         self.AUTHOR = 'yourmail@yourhost.org'
 
-        self.ANDROID_HOME = "/home/username/Android/Sdk"
+        self.ENVIRONMENT = {'ANDROID_HOME': "/home/username/Android/Sdk"}
 
         self.REDMINE_URL = "https://tracker.yourhost.org"
         self.REDMINE_PROJECT = "yourProject"
