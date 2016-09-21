@@ -49,6 +49,11 @@ def diff(path1, path2, prefix='darcspatch_'):
 
 
 def apply(cwd, patch, strip=0, unapply=False):
+    if not os.path.isfile(patch):
+        raise IOError("File {} does not exist".format(patch))
+    if not os.path.getsize(patch) > 0:
+        print("Skipping Patch {}: it's empty".format(patch))
+        return
     patchcmd = 'patch -p{} -i "{}"'.format(strip, patch)
     if unapply:
         patchcmd += ' -R'
