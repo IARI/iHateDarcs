@@ -8,6 +8,8 @@ def test(cwd):
     args = ['test']
 
     if Config.TEST_COMMAND:
+        print(path.join(cwd, Config.TEST_COMMAND) + " " + " ".join(Config.TEST_COMMAND_ARGS))
+
         darcs_test = spawn(path.join(cwd, Config.TEST_COMMAND), Config.TEST_COMMAND_ARGS, cwd=cwd,
                            encoding='iso-8859-1', env=Values.darcs_env, timeout=None)
     else:

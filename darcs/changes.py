@@ -21,15 +21,23 @@ def get_changes_from_upstream(cwd, upstream, files, max_patchcount=None, author=
     return Cache.get_cache.get_or_set(callback, max_patchcount, author, upstream)
 
 
-def get_changes(cwd, file, max_patchcount=None, author=None, repo=None):
-    args = ['changes', '-a']
+def get_changes(cwd, file, max_patchcount=None, author=None, repo=None, summary=False, patch: Patch = None, xml=False):
+    args = ['changes']
 
+    if xml:
+        args += ['--xml-output']
+    if patch:
+        args += [patch.MATCH_ARG, patch.match_hash]
     if max_patchcount:
         args += ['--max-count', str(max_patchcount)]
     if repo:
         args += ['--repo', repo]
     if author:
         args += ['--matches', 'author ' + author]
+    if summary:
+        args += ['--summary']
+
+    args += ['-a']
 
     darcs_changes = Darcs(args, file, cwd=cwd)
 

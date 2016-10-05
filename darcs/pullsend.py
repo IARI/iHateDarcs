@@ -1,4 +1,4 @@
-from darcs.common import Darcs, DarcsException
+from darcs.common import Darcs, DarcsException, Values
 from guidata_wrapper import message, Ask
 from pexpect_helper import Strategy, Send, EOF
 
@@ -53,7 +53,9 @@ def send(cwd, *patches, repo=None):  # List[Patch]
     if repo:
         args.append(repo)
 
-    darcs_send = Darcs(args, None, cwd=cwd)
+    env = Values.darcs_env.copy()
+    del env['TERM']
+    darcs_send = Darcs(args, None, cwd=cwd, env=env)
 
     Strategy(
         r'Shall I send this patch\? \(\d+\/\d+\).*',
