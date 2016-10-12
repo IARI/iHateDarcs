@@ -38,6 +38,12 @@ Also a preliminary basic support for rietveld:
 * gnu diffutils (the diff command)
 * gnu patch
 * PyQt4 or PyQt5 (required for guidata. Ubuntu reps: python3-pyqtX - alternatively via pypi)
+* kivy 
+```add-apt-repository ppa:kivy-team/kivy
+apt-get update
+apt-get install python3-kivy
+(https://kivy.org/docs/installation/installation-linux.html)
+```
 
 **regarding the darcs version**
 There have been slight output changes, in darcs 2.12 and the gui wraps the darcs cli client.

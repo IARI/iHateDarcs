@@ -12,6 +12,7 @@ from config import Config
 parser = argparse_wrapper.parser
 parser.add_argument("--cwd", help="darcs project path", action=argparse_wrapper.readable_dir, default=getcwd())
 parser.add_argument("--cmd", help="command type", choices=list(DarcsGui.Commands()))
+parser.add_argument("--kivy", help="use kivy gui")
 # parser.add_argument("files", help="restrict darcs commands to this file", action=argparse_wrapper.valid_file, nargs='*')
 parser.add_argument("files", help="restrict darcs commands to this file", nargs='*')
 
@@ -42,8 +43,13 @@ try:
             if not Config._INITIALIZED:
                 message("no changes", "You may edit the preferences later.")
 
-    gui = DarcsGui(cli_args)
-    gui.run()
+    if not cli_args.kivy:
+        gui = DarcsGui(cli_args)
+        gui.run()
+    else:
+        from main import DarcsApp
+
+        DarcsApp().run()
 
 except OperationCancelled:
     exit("operation canceled")
