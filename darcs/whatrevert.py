@@ -22,3 +22,9 @@ def revert(cwd, files):
     darcs_revert = Darcs(['revert', '-a'], files, cwd=cwd)
     Strategy({'Finished reverting.': EOF('reverted.'),
               'There are no changes to revert!': EOF('nothing to revert.')}).execute(darcs_revert)
+
+
+def annotate(cwd, file):
+    darcs_annotate = Darcs(['annotate'], file, cwd=cwd)
+
+    return darcs_annotate.get_all_output()
