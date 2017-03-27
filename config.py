@@ -1,6 +1,6 @@
 import yaml
 import os
-from os.path import join
+from os.path import join, dirname
 from time import time
 from lazy import lazy
 
@@ -8,15 +8,16 @@ APPLICATION_NAME = "iHateDarcs"
 
 APPLICATION_DIR = '.' + APPLICATION_NAME
 
-CONFIG_DIRS = (os.curdir, join(os.path.expanduser("~"), APPLICATION_DIR),
+CONFIG_DIRS = (join(os.curdir, '_darcs', APPLICATION_NAME),
+               join(os.curdir, APPLICATION_DIR),
+               join(os.path.expanduser("~"), APPLICATION_DIR),
                join("/etc", APPLICATION_DIR),
                os.environ.get(APPLICATION_NAME.upper() + '_CONFIG'))
-
-CONFIG_SAVE_PATH = join(os.path.expanduser("~"), APPLICATION_DIR)
 
 
 class Serializable:
     FILENAME = "config"
+    CONFIG_SAVE_PATH = CONFIG_DIRS[1]
 
     @classmethod
     def existing_config_locations(cls):
@@ -28,11 +29,12 @@ class Serializable:
 
     def save(self):
         try:
-            if not os.path.isdir(CONFIG_SAVE_PATH):
-                print("creating dir {}".format(CONFIG_SAVE_PATH))
-                os.mkdir(CONFIG_SAVE_PATH)
-            with open(join(CONFIG_SAVE_PATH, self.FILENAME), mode='w') as f:
+            if not os.path.isdir(self.CONFIG_SAVE_PATH):
+                print("creating dir {}".format(self.CONFIG_SAVE_PATH))
+                os.mkdir(self.CONFIG_SAVE_PATH)
+            with open(join(self.CONFIG_SAVE_PATH, self.FILENAME), mode='w') as f:
                 yaml.dump(self, f)
+                print("saved config to {}".format(f))
         except IOError as e:
             print("could not save config")
             print(e)
@@ -57,6 +59,8 @@ class Serializable:
                 with open(f) as source:
                     config = yaml.load(source)
                     save = config.check_compatibility_update()
+                    print("loaded config {}".format(f))
+                    cls.CONFIG_SAVE_PATH = dirname(f)
                     if save:
                         config.save()
                     break
@@ -77,7 +81,9 @@ class ConfigObject(Serializable):
 
         self.RIETVELD_USER = "yourUserName"
 
+        self.REPO_NAME = "yourrepo"
         self.UPSTREAM_REPO = "darcs@yourhost.org:/storage/repos/all/yourrepo"
+        self.DPM_PULL = "dpm-pull@yourhost.org"
 
         # --max-count option for darcs changes
         self.MAX_PATCH_COUNT = 50
@@ -89,6 +95,7 @@ class ConfigObject(Serializable):
         self.TIMEOUT = 15
 
         self.AUTHOR = 'yourmail@yourhost.org'
+        self.GSPREAD_ASSIGNEE = ''
 
         self.ENVIRONMENT = {'ANDROID_HOME': "/home/username/Android/Sdk"}
 
@@ -100,6 +107,7 @@ class ConfigObject(Serializable):
         self.TEST_COMMAND_ARGS = ["test"]
 
         self.DIFF_STORE_DIR = "/home/username/patches"
+        self.ANNOTATED_STORE_DIR = "/tmp/annotated"
 
         self.RIETVELD_URL = "http://rietveld.yourhost.org:8000/"
         self.RIETVELD_USER = "yourUserName"

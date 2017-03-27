@@ -2,10 +2,11 @@ from config import Config, Cache
 from guidata_wrapper import *
 from darcs.common import Patch
 from darcs.changes import get_local_changes_only, get_changes
-from depgraph import draw_graph
+from darcs.whatrevert import annotate
+from depgraph import draw_graph, darcs_deps
 from darcs.clone import Clone, CopyFiles, CopyDir, TempBackup
 from darcs.amendrecord import amend_patch, record_patch, unrecord_patch, rename_patch
-from darcs.diff import diffPaths, diffMeldDirs, diff, apply
+from darcs.diff import diffPaths, diffMeldDirs, diff, apply, diffMeld
 from darcs.pullsend import pull, send, unpull
 from darcs.test import test
 from collections import defaultdict
@@ -88,8 +89,7 @@ class DarcsGui:
 
         return next(p for p in patches if p.title == patch.title)
 
-    def getpatch(self, multiple=False):
-
+    def getpatches(self):
         patches = get_local_changes_only(self.cwd, Config.UPSTREAM_REPO, self.files, Config.MAX_PATCH_COUNT,
                                          author=Config.AUTHOR)[:Config.MAX_PATCH_SHOW]
 
@@ -97,6 +97,12 @@ class DarcsGui:
             message("no patches", "Konnte keine Patches von {} finden, die nicht auch in {} sind.".format(Config.AUTHOR,
                                                                                                           Config.UPSTREAM_REPO))
             exit()
+
+        return patches
+
+    def getpatch(self, multiple=False):
+
+        patches = self.getpatches()
 
         title = "Wähle Patches" if multiple else "Wähle einen Patch"
 
@@ -268,6 +274,29 @@ class DarcsGui:
             for issue in issues:
                 QuickEditIssue2(issue)
 
+    def darcs_annotate(self):
+        annotated = annotate(self.cwd, self.files)
+        # os.path.abspath(Config.ANNOTATED_STORE_DIR)
+        if not os.path.isdir(Config.ANNOTATED_STORE_DIR):
+            print("creating directory {}".format(Config.ANNOTATED_STORE_DIR))
+            os.mkdir(Config.ANNOTATED_STORE_DIR)
+
+        fname = os.path.basename(self.files[0])
+
+        filepath = os.path.join(Config.ANNOTATED_STORE_DIR, fname + ".annotated")
+        newfilepath = filepath
+        while os.path.exists(newfilepath):
+             newfilepath += 'X'
+        if newfilepath != filepath:
+             message("existed", "File {} existed. Patch saved as {}.".format(filepath, newfilepath))
+
+        with open(newfilepath,'w') as f:
+            f.write(annotated)
+
+        from pexpect_helper import gnome_open
+        gnome_open(newfilepath)
+        # message('annotated', annotated)
+
     def darcs_rename(self):
         self.getpatch()
         patch = self.patches
@@ -283,8 +312,16 @@ class DarcsGui:
         print("renaming\n   {}\n-> {}".format(old, new))
         rename_patch(self.cwd, patch, new)
 
+        patch.title = new
         if message('send', 'send patch?\n{}'.format(patch.title), True):
             send(self.cwd, self.getpatchagain(patch))
+
+    def darcs_suspend(self):
+        self.getpatch()
+        patch = self.patches
+
+        depres = darcs_deps(self.cwd, patch)
+        #message(depres)
 
     def darcs_diff(self):
         record_changes, pending_changes, strips, dp = self._select_diff_parts('diff', False)
@@ -309,6 +346,17 @@ class DarcsGui:
             if newfilepath != filepath:
                 message("existed", "File {} existed. Patch saved as {}.".format(filepath, newfilepath))
             move(record_changes, newfilepath)
+
+    def darcs_changes(self):
+        clone = self._clone_pristine()
+        self.getpatch()
+        clone.join()
+
+        unpull(self.pristine, self.patches)
+
+
+
+        # diffMeld(self.pristine, self.cwd, filechanges=())
 
     def darcs_apply(self):
         self._apply()
@@ -354,8 +402,14 @@ class DarcsGui:
         unpull(self.cwd, self.patches)
 
     def darcs_send(self):
-        self.getpatch()
-        send(self.cwd, self.patches)
+
+        send_gui = SendPatch(self.cwd, self.files)
+        send_gui.edit()
+
+        patch = send_gui.patch
+        print(patch)
+
+        send(self.cwd, patch, output=send_gui.output)
 
     def darcs_preferences(self):
         AutoGui(Config, changed_hook=Config.save).edit()
