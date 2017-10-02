@@ -1,12 +1,14 @@
 import guidata.dataset.datatypes as dt
 import guidata.dataset.dataitems as di
 import guidata.dataset.qtwidgets as qtw
+from textwrap import shorten
 from darcs.changes import get_local_changes_only
 from darcs.common import Patch
 from darcs.whatrevert import whatsnew
 from pexpect_helper import SpawnAction, spawn
 from config import Config
 from collections import defaultdict
+from releasetestutil import get_releasetest_issues
 import os
 
 try:
@@ -25,9 +27,27 @@ class CancelDataset(dt.DataSet):
         return res
 
 
+def patchChoiceItem(patches):
+    # if not patches:
+    #     patches = get_local_changes_only(cwd, Config.UPSTREAM_REPO, files, Config.MAX_PATCH_COUNT,
+    #                                  author=Config.AUTHOR)[:Config.MAX_PATCH_SHOW]
+
+    titlecount = defaultdict(int)
+    for p in patches:
+        titlecount[p.title] += 1
+
+    def strf(p):
+        if titlecount[p.title] > 1:
+            return "{} ({}) \n\n".format(p.title, p.date)
+        return p.title
+
+    return di.ChoiceItem("patch", [(p, strf(p)) for p in patches])
+
+
 def message(title, text, question=False, icon=None):
     msg = QMessageBox()
-    icon = (QMessageBox.Question if question else QMessageBox.Information) if icon is None else icon
+    icon = (
+    QMessageBox.Question if question else QMessageBox.Information) if icon is None else icon
     msg.setIcon(icon)
 
     msg.setText(text)
@@ -72,22 +92,30 @@ def pickfrom(*items, title="Pick an item...", itemtitle="items", multiple=False,
     return items[int(p.selection)]
 
 
+def SendPatch(cwd, files):
+    patches = get_local_changes_only(cwd, Config.UPSTREAM_REPO, files, Config.MAX_PATCH_COUNT,
+                                     author=Config.AUTHOR)[:Config.MAX_PATCH_SHOW]
+
+    def callback(dataset, item, value, parent):
+        dataset.output = Config.DIFF_STORE_DIR
+
+    class SendPatch(CancelDataset):
+        patch = patchChoiceItem(patches)
+        output = di.StringItem("file", default='').set_pos(col=0)
+        button = di.ButtonItem("default", callback).set_pos(col=1)
+
+    return SendPatch("Send Patch...")
+
+
 def AmendPatch(cwd, files):
     patches = get_local_changes_only(cwd, Config.UPSTREAM_REPO, files, Config.MAX_PATCH_COUNT,
                                      author=Config.AUTHOR)[:Config.MAX_PATCH_SHOW]
     if not patches:
-        message("no patches", "Konnte keine Patches von {} finden, die nicht auch in {} sind.".format(Config.AUTHOR,
-                                                                                                      Config.UPSTREAM_REPO))
+        message("no patches",
+                "Konnte keine Patches von {} finden, die nicht auch in {} sind.".format(
+                    Config.AUTHOR,
+                    Config.UPSTREAM_REPO))
         exit()
-
-    titlecount = defaultdict(int)
-    for p in patches:
-        titlecount[p.title] += 1
-
-    def strf(p):
-        if titlecount[p.title] > 1:
-            return "{} ({}) \n\n".format(p.title, p.date)
-        return p.title
 
     filechanges, addfiles = whatsnew(cwd, files)
 
@@ -97,7 +125,7 @@ def AmendPatch(cwd, files):
         files_item = None
 
     class AmendPatch(CancelDataset):
-        patch = di.ChoiceItem("patch", [(p, strf(p)) for p in patches])
+        patch = patchChoiceItem(patches)
         files = files_item
         askdeps = di.BoolItem("ask-deps", default=False)
 
@@ -108,27 +136,39 @@ def RecordPatch(*args, **kwargs):
     # raise_attr_exception=False
     mrm = MyRedmine()
 
-    issueChoices = [(0, "None")] + [(i.id, "#{}: {}".format(i.id, i.subject)) for i in mrm.my_issues]
+    issueChoices = [(0, "None")] + [(i.id, "#{}: {}".format(i.id, i.subject)) for i in
+                                    mrm.my_issues]
+
+    releaseChoices = [(0, "None")] + [
+        (int(r['Nr']), "{}: {}".format(r['Nr'], shorten(r['Beschreibung'], 80))) for r in
+        get_releasetest_issues(assignee=Config.GSPREAD_ASSIGNEE)]
 
     class RecordPatch(CancelDataset):
         prefix = di.ChoiceItem('Prefix', [(p, p.name) for p in Prefixes])
         tracker = di.ChoiceItem("Tracker", issueChoices, default=0)
+        rtest = di.ChoiceItem("Releasetest", releaseChoices, default=0)
 
         name = di.StringItem("Name", notempty=True)
         author = di.StringItem("Author", notempty=True, default=Config.AUTHOR)
 
         @property
         def Prefix(self):
-            return self.prefix.Name(self.tracker)
+            return self.prefix.Name(self.tracker, self.rtest)
 
         @property
         def FormattedName(self):
             return '{}: {}'.format(self.Prefix, self.name)
 
+        def check_prefix(self):
+            if not self.prefix.hasParameter:
+                return False
+            return self.tracker > 0 or self.rtest
+
+
         def read(self, p: Patch):
             prefix, name = p.title.split(': ', 1)
             self.name = name
-            self.prefix, self.tracker = Prefixes.read(prefix)
+            self.prefix, self.tracker, self.rtest = Prefixes.read(prefix)
 
     return RecordPatch(*args, **kwargs)
 
@@ -137,8 +177,12 @@ def QuickEditIssue(*args, **kwargs):
     # raise_attr_exception=False
     mrm = MyRedmine()
 
-    issueChoices = [(i, "#{} ({}: {}%)".format(i, i.status, i.done_ratio)) for i in mrm.my_issues_filtered(**kwargs)]
+    issueChoices = [(i, "#{} ({}: {}%)".format(i, i.status, i.done_ratio)) for i in
+                    mrm.my_issues_filtered(**kwargs)]
     statusChoices = [(0, "Dont Change")] + [(s, s.name) for s in mrm.issue_statuses]
+    releaseChoices = [(int(r['Nr']), "{}: {}".format(r['Nr'], shorten(r['Beschreibung'], 50))) for
+                      r in
+                      get_releasetest_issues()]
 
     if not issueChoices:
         message("Nope", "There are no new Issues for you.")
@@ -146,6 +190,7 @@ def QuickEditIssue(*args, **kwargs):
 
     class QuickIssue(CancelDataset):
         issue = di.ChoiceItem("Issue", issueChoices)
+        rtest = di.ChoiceItem("Releasetest", releaseChoices)
         status = di.ChoiceItem("Status", statusChoices, default=0)
         progress = di.IntItem("Progress", min=0, max=100, slider=True, default=0)
         comment = di.TextItem("Comment")
@@ -194,6 +239,7 @@ class GraphOptions(CancelDataset):
     limit = di.IntItem("How many Patches?", default=20, min=1)
     filename = di.StringItem("file", notempty=True, default='/tmp/depgraph')
     format = di.ChoiceItem('format', [('pdf', 'pdf'), ('svg', 'svg'), ('png', 'png')])
+    just_mine = di.BoolItem('only mine', help='show only my patches', default=False)
     open = di.BoolItem('open', help='gnome-open file when done if checked', default=True)
     color = di.ColorItem("My Local Patches", default="#00AA00")
     acolor = di.ColorItem("My Applied Patches", default="#0000DD")
@@ -215,7 +261,8 @@ class SaveDiff(dt.DataSet):
 def getint(title="How many...", itemlabel="items", default=None, min=None, max=None, nonzero=None,
            unit='', even=None, slider=False, help='', check=True):
     class Getint(CancelDataset):
-        selection = di.IntItem(itemlabel, default=default, min=min, max=max, nonzero=nonzero, unit=unit, even=even,
+        selection = di.IntItem(itemlabel, default=default, min=min, max=max, nonzero=nonzero,
+                               unit=unit, even=even,
                                slider=slider, help=help, check=check)
 
     p = Getint(title=title)
@@ -270,6 +317,7 @@ class DictItem(di.ButtonItem):
 
         di.ButtonItem.__init__(self, label, dictedit, icon='dictedit.png',
                                default=default, help=help, check=check)
+
 
 qtw.DataSetEditLayout.register(DictItem, qtw.ButtonWidget)
 

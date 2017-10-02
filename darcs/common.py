@@ -20,13 +20,13 @@ class Prefixes(Enum):
     BUGFIX = """"für gefixte Bugs, die nicht im Bugtracker waren"""
     FEATURE = """für Features, die nicht im Bugtracker waren"""
     TEST = """für Tests, die nicht im Bugtracker waren"""
-    BUG = ("""für Bugreports aus dem Bugtracker""", "BUG #{}")
-    FRQ = ("""für implementierte Featurequests aus dem Bugtracker""", "FRQ #{}")
-    TESTF = ("""für implementierte Featurequests aus dem Bugtracker""", "TEST #{}")
-    AMEND = ("""für Ausbesserungen zu einem bestimmten Bug""", "AMEND #{}")
-    ENH = ("""für Enhancments aus dem Bugtracker""", "ENH #{}")
+    BUG = ("""für Bugreports aus dem Bugtracker""", "BUG {}")
+    FRQ = ("""für implementierte Featurequests aus dem Bugtracker""", "FRQ {}")
+    TESTF = ("""für implementierte Featurequests aus dem Bugtracker""", "TEST {}")
+    AMEND = ("""für Ausbesserungen zu einem bestimmten Bug""", "AMEND {}")
+    ENH = ("""für Enhancments aus dem Bugtracker""", "ENH {}")
     YOLO = """"Für reine Textänderungen oder Änderungen, die die Schulungsversion betreffen"""
-    YOLOF = ("""Für reine Textänderungen aus dem Bugtracker""", "YOLO #{}")
+    YOLOF = ("""Für reine Textänderungen aus dem Bugtracker""", "YOLO {}")
 
     def __init__(self, desc, txt=None):
         self.desc = desc
@@ -35,26 +35,53 @@ class Prefixes(Enum):
     def description(self):
         return "{}:\n{}".format(self.name, self.desc)
 
-    def Name(self, tracker):
+    def Name(self, tracker, rtest=None):
         try:
-            return self.realstr.format(tracker)
+            if rtest:
+                return self.realstr.format('T{}'.format(rtest))
+            if tracker > 0:
+                return self.realstr.format('#{}'.format(tracker))
         except Exception:
-            return self.name
+            pass
+
+        return self.name
+
+    @property
+    def hasParameter(self):
+        if not self.realstr:
+            return False
+        try:
+            self.realstr.format('test')
+            return True
+        except:
+            return False
 
     def Match(self, name):
-        return re.match(self.Name("(\d+)"), name)
+        m1 = re.match(self.Name("(?P<rm>\d+)"), name)
+        return m1 if m1 else re.match(self.Name(0, "(?P<rt>\d+)"), name)
+
+    @classmethod
+    def rTest(self, name):
+        m = re.search(r"T(\d+)", name)
+        try:
+            issue = m.group(1)
+            return int(issue)
+        except:
+            pass
 
     @classmethod
     def read(cls, name):
         for pref in cls:
             m = pref.Match(name)
-            issue = None
+            issue = 0
+            rt = 0
             try:
-                issue = m.group(1)
+                issue = m.groupdict.get('rm', 0)
+                rt = m.groupdict.get('rt', 0)
             except:
                 pass
             if m:
-                return pref, int(issue)
+                return pref, int(issue), int(rt)
 
         raise Exception("Could not read {} as prefix".format(name))
 
@@ -63,8 +90,9 @@ NEWLINE = r"(\r\n?|\n)"
 NONEWLINE = r"[^\r\n]"
 
 
-def named_match(name, pattern=NONEWLINE + r'*', before=r'', after=NEWLINE):
-    return r'{b}(?P<{n}>{p}){a}'.format(n=name, p=pattern, b=before, a=after)
+def named_match(name, pattern=NONEWLINE + r'*', before=r'', after=NEWLINE, optional=False):
+    e = r'{b}(?P<{n}>{p}){a}'.format(n=name, p=pattern, b=before, a=after)
+    return r'(?:' + e + r')' if optional else e
 
 
 class LazyValues:

@@ -129,6 +129,11 @@ class DarcsGui:
         NewPatchPars = RecordPatch('Neuen Patch Aufzeichnen')
         NewPatchPars.edit()
 
+        if not NewPatchPars.check_prefix() and message("Referenz vergessen?",
+                                                       "Fehlt eine Referenz auf ein (Release) Issue?",
+                                                       True):
+            NewPatchPars.edit()
+
         record_changes, pending_changes, strips, dp = self._select_diff_parts("record")
 
         # backup.join()
