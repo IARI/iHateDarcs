@@ -93,8 +93,12 @@ def pickfrom(*items, title="Pick an item...", itemtitle="items", multiple=False,
 
 
 def SendPatch(cwd, files):
+    author = Config.AUTHOR
     patches = get_local_changes_only(cwd, Config.UPSTREAM_REPO, files, Config.MAX_PATCH_COUNT,
-                                     author=Config.AUTHOR)[:Config.MAX_PATCH_SHOW]
+                                     author=author)[:Config.MAX_PATCH_SHOW]
+
+    if not patches:
+        raise Exception("No unapplied patcehs found by {}.".format(author))
 
     def callback(dataset, item, value, parent):
         dataset.output = Config.DIFF_STORE_DIR
